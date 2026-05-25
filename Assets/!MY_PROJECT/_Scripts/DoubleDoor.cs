@@ -7,6 +7,10 @@ public class DoubleDoor : MonoBehaviour
     public float openAngle = 90f;
     public float smooth = 6f;
 
+    [Header("Звуки двери")]
+    public AudioSource openSound;
+    public AudioSource closeSound;
+
     private bool isOpen = false;
     private bool playerIsNear = false;
     private Quaternion leftDefaultRot;
@@ -39,7 +43,18 @@ public class DoubleDoor : MonoBehaviour
         if (Input.GetKeyDown(KeyCode.E) && playerIsNear)
         {
             isOpen = !isOpen;
+
+            if (isOpen)
+            {
+                if (openSound != null) openSound.Play();
+            }
+            else
+            {
+                if (closeSound != null) closeSound.Play();
+            }
         }
+
+
 
         Quaternion leftTarget = leftDefaultRot * Quaternion.Euler(0, -openAngle, 0);
         Quaternion rightTarget = rightDefaultRot * Quaternion.Euler(0, openAngle, 0);

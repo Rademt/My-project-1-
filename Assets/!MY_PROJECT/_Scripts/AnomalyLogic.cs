@@ -40,27 +40,52 @@ public class AnomalyLogic : MonoBehaviour
 
     void Start()
     {
-        #if UNITY_EDITOR
-        if (Time.realtimeSinceStartup < 2f) 
+        Debug.Log($"[DEBUG] Главный триггер '{gameObject.name}' успешно активирован на сцене и готов ловить игрока!");
+
+#if UNITY_EDITOR
+        if (Time.realtimeSinceStartup < 2f)
         {
-            PlayerPrefs.SetInt("CurrentLoop", debugMode ? 1 : 0); // Если тест, то не сбрасываем в чистый 0 этаж
+            PlayerPrefs.SetInt("CurrentLoop", debugMode ? 1 : 0);
             PlayerPrefs.Save();
             Debug.Log("<color=orange>[РЕДАКТОР]: Настройка этажей оптимизирована под тест!</color>");
         }
-        #endif
+#endif
 
-        wasAnomalySpawned = false; 
+        wasAnomalySpawned = false;
         if (allAnomalies == null || allAnomalies.Count == 0) return;
 
+        // --- ИНИЦИАЛИЗАЦИЯ СЦЕНЫ (СБРОС ВСЕХ АНОМАЛИЙ) ---
         foreach (var anomaly in allAnomalies)
         {
             if (anomaly.anomalyObject != null) anomaly.anomalyObject.SetActive(false);
             if (anomaly.normalObject != null) anomaly.normalObject.SetActive(true);
-            if (anomaly.screamerTriggerObject != null) anomaly.screamerTriggerObject.SetActive(false);
+
+            // УМНОЕ ОТКЛЮЧЕНИЕ ТРИГГЕРОВ
+            if (anomaly.screamerTriggerObject != null)
+            {
+                // Проверяем, колесница ли это
+                var wheelScript = anomaly.screamerTriggerObject.GetComponentInChildren<TriggerScreamerObject>();
+
+                if (wheelScript != null)
+                {
+                    // Если это колесница — ЖЕСТКО ВЫКЛЮЧАЕМ её триггер, чтобы она не ехала на чистом круге!
+                    anomaly.screamerTriggerObject.SetActive(false);
+                }
+                else
+                {
+                    // Если это старая дверь туалета, НЕ ВЫКЛЮЧАЕМ её объект целиком, 
+                    // чтобы дверь не исчезала, а просто глушим сам скрипт скримера
+                    var toiletScript = anomaly.screamerTriggerObject.GetComponentInChildren<ToiletDoorScreamer>();
+                    if (toiletScript != null)
+                    {
+                        // Тут дверь остается видимой, но скример спать ложится (если у тебя там есть метод выключения)
+                        // Если метода нет, то оставляем как есть, главное — дверь не исчезнет!
+                    }
+                }
+            }
         }
 
         Random.InitState(System.DateTime.Now.Millisecond + System.DateTime.Now.Second);
-
         int currentLoop = PlayerPrefs.GetInt("CurrentLoop", 0);
 
         if (debugMode)
@@ -89,13 +114,12 @@ public class AnomalyLogic : MonoBehaviour
         if (globalRoll <= AnomalyChance)
         {
             wasAnomalySpawned = true;
-
             int randomIndex = Random.Range(0, allAnomalies.Count);
             ActivateAnomaly(allAnomalies[randomIndex]);
         }
         else
         {
-            Debug.Log($"<color=green>[ЧИСТЫЙ КРУГ]:</color> Ролл не прошел. Этаж: {currentLoop}");
+            Debug.Log($"<color=green>[ЧИСТЫЙ КРУГ]:</color> Ролл не прошел. Колесница спит. Этаж: {currentLoop}");
         }
     }
 
@@ -119,7 +143,22 @@ public class AnomalyLogic : MonoBehaviour
             case AnomalyType.TriggerScreamer:
                 if (anomaly.screamerTriggerObject != null)
                 {
+                    // Включаем триггер колесницы/скримера (теперь он сработает только если выпала аномалия!)
                     anomaly.screamerTriggerObject.SetActive(true);
+
+                    // Логика для двери туалета
+                    ToiletDoorScreamer toiletScript = anomaly.screamerTriggerObject.GetComponentInChildren<ToiletDoorScreamer>();
+                    if (toiletScript != null)
+                    {
+                        toiletScript.EnableScreamerAnomaly();
+                    }
+
+                    // Логика для колесницы
+                    TriggerScreamerObject wheelScript = anomaly.screamerTriggerObject.GetComponentInChildren<TriggerScreamerObject>();
+                    if (wheelScript != null)
+                    {
+                        Debug.Log($"[AnomalyLogic] Колесница '{anomaly.screamerTriggerObject.name}' активирована как АНОМАЛИЯ!");
+                    }
                 }
                 break;
         }

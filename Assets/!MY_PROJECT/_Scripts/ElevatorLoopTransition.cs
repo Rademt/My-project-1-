@@ -10,12 +10,25 @@ public class ElevatorLoopTransition : MonoBehaviour
     [Header("Компоненты лифта")]
     public Animator elevatorAnimator; // Аниматор дверей лифта
     public string closeAnimationName = "Elevator_Close";
-    public AudioSource elevatorSound; // Звук движения/закрытия лифта
+
+    [Header("Звуковое сопровождение")]
+    public AudioSource doorOpenSound;   // Звук ОТКРЫТИЯ дверей (играет сам при старте этажа)
+    public AudioSource doorCloseSound;  // Звук ЗАКРЫТИЯ дверей (играет при входе игрока)
+    public AudioSource elevatorMusic;   // Хоррор-музыка поездки лифта
 
     [Header("Логика аномалий")]
     public AnomalyLogic anomalyLogic; // Перетащи сюда наш менеджер аномалий
 
     private bool playerInside = false;
+
+    void Start()
+    {
+        // 1. Сразу при загрузке сцены/этажа включаем звук открытия дверей
+        if (doorOpenSound != null)
+        {
+            doorOpenSound.Play();
+        }
+    }
 
     void OnTriggerEnter(Collider other)
     {
@@ -29,23 +42,41 @@ public class ElevatorLoopTransition : MonoBehaviour
 
     void StartElevatorProcess()
     {
+        // 2. Запускаем анимацию закрытия дверей
         if (elevatorAnimator != null)
         {
             elevatorAnimator.Play(closeAnimationName);
         }
 
-        if (elevatorSound != null)
+        // 3. Включаем звук закрывания дверей
+        if (doorCloseSound != null)
         {
-            elevatorSound.Play();
+            doorCloseSound.Play();
         }
 
-        Debug.Log("Двери лифта закрылись. Поездка началась...");
+        Debug.Log("Двери лифта закрываются...");
 
-        Invoke("CompleteLoopTransition", 5f);
+        // 4. Через 1.5 секунды (когда двери почти захлопнулись) включаем музыку поездки
+        Invoke("PlayElevatorMusic", 2.5f);
+
+        // 5. Через 5 секунд завершаем поездку и переключаем этаж
+        Invoke("CompleteLoopTransition", 7f);
+    }
+
+    void PlayElevatorMusic()
+    {
+        if (elevatorMusic != null)
+        {
+            elevatorMusic.Play();
+            Debug.Log("Лифт поехал. Играет музыка поездки.");
+        }
     }
 
     void CompleteLoopTransition()
     {
+        // Перед перезагрузкой сцены глушим музыку, если она играет
+        if (elevatorMusic != null) elevatorMusic.Stop();
+
         int currentLoop = PlayerPrefs.GetInt("CurrentLoop", 0);
 
         bool thereWasAnomaly = false;
@@ -53,7 +84,6 @@ public class ElevatorLoopTransition : MonoBehaviour
         {
             thereWasAnomaly = anomalyLogic.wasAnomalySpawned;
         }
-
 
         bool playerGuessedRight = false;
 
@@ -65,7 +95,6 @@ public class ElevatorLoopTransition : MonoBehaviour
         {
             playerGuessedRight = isCorrectChoice;
         }
-
 
         if (playerGuessedRight)
         {

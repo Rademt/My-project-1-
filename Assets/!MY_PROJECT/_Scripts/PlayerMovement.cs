@@ -29,9 +29,20 @@ namespace SojaExiles
 
         private float lastSinValue = 0f;
 
+        // Ссылка на менеджер кастомного управления
+        private SlimUI.ModernMenu.UISettingsManager keyManager;
+
         void Start()
         {
             if (cameraTransform != null) defaultYPos = cameraTransform.localPosition.y;
+
+            // Находим менеджер на сцене
+            keyManager = FindObjectOfType<SlimUI.ModernMenu.UISettingsManager>();
+
+            if (keyManager == null)
+            {
+                Debug.LogError("UISettingsManager не найден на сцене!");
+            }
         }
 
         void Update()
@@ -43,12 +54,28 @@ namespace SojaExiles
                 velocity.y = -2f;
             }
 
-            // Проверяем, зажат ли Shift
+            // Устанавливаем дефолтные значения ввода (на случай, если менеджер клавиш не назначен)
             bool isRunning = Input.GetKey(KeyCode.LeftShift);
-            float currentSpeed = isRunning ? runSpeed : walkSpeed;
-
             float x = Input.GetAxisRaw("Horizontal");
             float z = Input.GetAxisRaw("Vertical");
+
+            // --- ОПРОС КАСТОМНЫХ КНОПОК ИЗ МЕНЕДЖЕРА ---
+            if (keyManager != null && keyManager.keys.Count > 0)
+            {
+                // Проверяем кастомный спринт
+                isRunning = Input.GetKey(keyManager.keys["Sprint"]);
+
+                // Перезаписываем x (влево/вправо) и z (вперед/назад) ручным опросом
+                x = 0f;
+                z = 0f;
+
+                if (Input.GetKey(keyManager.keys["Forward"])) z += 1f;
+                if (Input.GetKey(keyManager.keys["Backward"])) z -= 1f;
+                if (Input.GetKey(keyManager.keys["Left"])) x -= 1f;
+                if (Input.GetKey(keyManager.keys["Right"])) x += 1f;
+            }
+
+            float currentSpeed = isRunning ? runSpeed : walkSpeed;
 
             Vector3 move = transform.right * x + transform.forward * z;
             if (move.magnitude > 1) move.Normalize();

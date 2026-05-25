@@ -17,6 +17,7 @@ public class ToiletDoorScreamer : MonoBehaviour
     public AudioSource screamAudio;
     public float destroyDelay = 1.5f;
 
+    // Теперь это свойство можно включить из другого скрипта
     [HideInInspector]
     public bool isAnomalyActive = false;
 
@@ -36,7 +37,7 @@ public class ToiletDoorScreamer : MonoBehaviour
             if (p != null) player = p.transform;
         }
 
-        isAnomalyActive = true;
+        // УБРАЛИ СТРОЧКУ isAnomalyActive = true; чтобы дверь зря не скримила на чистых кругах
 
         if (zombie != null) zombie.SetActive(false);
     }
@@ -64,6 +65,7 @@ public class ToiletDoorScreamer : MonoBehaviour
                         {
                             if (openSound != null) openSound.Play();
 
+                            // Скример сработает только если аномалия активна
                             if (isAnomalyActive && !hasTriggered)
                             {
                                 hasTriggered = true;
@@ -81,6 +83,12 @@ public class ToiletDoorScreamer : MonoBehaviour
 
         Quaternion targetRotation = isOpen ? openRotation : defaultRotation;
         transform.localRotation = Quaternion.Slerp(transform.localRotation, targetRotation, Time.deltaTime * smooth);
+    }
+
+    // Этот метод теперь будет вызывать AnomalyLogic
+    public void EnableScreamerAnomaly()
+    {
+        isAnomalyActive = true;
     }
 
     private IEnumerator StartScreamRoutine()
