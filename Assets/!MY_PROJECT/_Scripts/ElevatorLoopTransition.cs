@@ -19,10 +19,23 @@ public class ElevatorLoopTransition : MonoBehaviour
     [Header("Логика аномалий")]
     public AnomalyLogic anomalyLogic; // Перетащи сюда наш менеджер аномалий
 
+    [Header("Экран Победы (UI)")]
+    [Tooltip("Перетащи сюда скопированную и переделанную плашку паузы")]
+    public GameObject victoryMenuPanel;
+
+    [Header("Скрипты для отключения при победе")]
+    [Tooltip("Перетащи сюда объект Паузы (на котором висит скрипт паузы)")]
+    public GameObject pauseControllerObject;
+    [Tooltip("Перетащи сюда твоего Персонажа/Камеру (где висит управление мышью)")]
+    public MonoBehaviour playerMovementScript;
+
     private bool playerInside = false;
 
     void Start()
     {
+        // Убедимся, что время идет нормально (на случай, если вышли из меню или перезапустили)
+        Time.timeScale = 1f;
+
         // 1. Сразу при загрузке сцены/этажа включаем звук открытия дверей
         if (doorOpenSound != null)
         {
@@ -56,10 +69,10 @@ public class ElevatorLoopTransition : MonoBehaviour
 
         Debug.Log("Двери лифта закрываются...");
 
-        // 4. Через 1.5 секунды (когда двери почти захлопнулись) включаем музыку поездки
+        // 4. Через 2.5 секунды (когда двери почти захлопнулись) включаем музыку поездки
         Invoke("PlayElevatorMusic", 2.5f);
 
-        // 5. Через 5 секунд завершаем поездку и переключаем этаж
+        // 5. Через 7 секунд завершаем поездку и переключаем этаж
         Invoke("CompleteLoopTransition", 7f);
     }
 
@@ -74,7 +87,7 @@ public class ElevatorLoopTransition : MonoBehaviour
 
     void CompleteLoopTransition()
     {
-        // Перед перезагрузкой сцены глушим музыку, если она играет
+        // Перед действиями глушим музыку, если она играет
         if (elevatorMusic != null) elevatorMusic.Stop();
 
         int currentLoop = PlayerPrefs.GetInt("CurrentLoop", 0);
@@ -103,11 +116,16 @@ public class ElevatorLoopTransition : MonoBehaviour
             PlayerPrefs.Save();
             Debug.Log($"Правильно! Лифт приехал на этаж: {currentLoop}");
 
-            if (currentLoop >= 8)
+            if (currentLoop >= 2)
             {
                 Debug.Log("ПОБЕДА!");
+                // Сбрасываем сохранения для следующего раза
                 PlayerPrefs.SetInt("CurrentLoop", 0);
                 PlayerPrefs.Save();
+
+                // Вызываем наше окно победы вместо перезагрузки сцены
+                TriggerVictoryWindow();
+                return; // Выходим из метода, чтобы сцена НЕ перезагружалась!
             }
         }
         else
@@ -117,6 +135,42 @@ public class ElevatorLoopTransition : MonoBehaviour
             PlayerPrefs.Save();
         }
 
+        // Перезагружаем сцену, только если игра продолжается
         SceneManager.LoadScene(SceneManager.GetActiveScene().name);
+    }
+
+    private void TriggerVictoryWindow()
+    {
+        // 1. ПРИНУДИТЕЛЬНО ВЫКЛЮЧАЕМ СКРИПТ ПАУЗЫ, чтобы Escape больше не работал
+        if (pauseControllerObject != null)
+        {
+            pauseControllerObject.SetActive(false);
+        }
+
+        // 2. ВЫКЛЮЧАЕМ УПРАВЛЕНИЕ ИГРОКОМ, чтобы его скрипт не прятал курсор каждый кадр
+        if (playerMovementScript != null)
+        {
+            playerMovementScript.enabled = false;
+        }
+
+        // 3. Показываем плашку выигрыша
+        if (victoryMenuPanel != null)
+        {
+            victoryMenuPanel.SetActive(true);
+        }
+
+        // 4. Ставим игру на тотальную паузу
+        Time.timeScale = 0f;
+
+        // 5. Жестко освобождаем и показываем курсор мыши
+        Cursor.lockState = CursorLockMode.None;
+        Cursor.visible = true;
+    }
+
+    // Этот метод привяжем на OnClick() кнопки «Главное меню» на экране победы
+    public void LoadMainMenu(string sceneName)
+    {
+        Time.timeScale = 1f; // ОБЯЗАТЕЛЬНО возвращаем время в норму перед сменой сцены!
+        SceneManager.LoadScene(sceneName);
     }
 }
