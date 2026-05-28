@@ -2,13 +2,13 @@ using UnityEngine;
 
 public class TriggerScreamerObject : MonoBehaviour
 {
-    [Header("Кому запускать анимацию?")]
+    [Header("Кому запускати анімацію?")]
     public Animator wheelchairAnimator;
 
-    [Header("Имя анимации в Аниматоре")]
+    [Header("Назва анімації в Аніматорі")]
     public string animationName = "Wheelchair_Roll";
 
-    [Header("Звук для анимации")]
+    [Header("Звук для анімації")]
     public AudioSource soundSource;
 
     private bool isTriggered = false;
@@ -22,13 +22,13 @@ public class TriggerScreamerObject : MonoBehaviour
             if (wheelchairAnimator != null)
             {
                 wheelchairAnimator.Play(animationName);
-                Debug.Log("Кресло покатилось!");
+                Debug.Log("Крісло покатилось!");
             }
 
             if (soundSource != null)
             {
                 soundSource.Play();
-                Debug.Log("Звук запущен!");
+                Debug.Log("Звук увімкнено!");
             }
         }
     }

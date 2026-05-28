@@ -14,7 +14,7 @@ public class FloorSignUpdater : MonoBehaviour
     public void UpdateFloorText()
     {
         int currentLoop = PlayerPrefs.GetInt("CurrentLoop", 0);
-        Debug.Log($"[FloorSignUpdater] Вывожу на стену уровень: {currentLoop}");
+        Debug.Log($"[FloorSignUpdater] Вирівнюю рівень на стіні: {currentLoop}");
 
         textMesh3D = GetComponent<TextMeshPro>();
         if (textMesh3D != null)
@@ -30,12 +30,12 @@ public class FloorSignUpdater : MonoBehaviour
         }
     }
 
-    [ContextMenu("Сбросить игру на 0 этаж")]
+    [ContextMenu("Повернути гру на 0 поверх")]
     public void ResetPrefsForDebug()
     {
         PlayerPrefs.SetInt("CurrentLoop", 0);
         PlayerPrefs.Save();
         UpdateFloorText();
-        Debug.Log("<color=red>[DEBUG]: Все сохранения стерты вручную. Вы на 0-м этаже!</color>");
+        Debug.Log("<color=red>[DEBUG]: Усі збереження видалено вручну. Ви перебуваєте на 0-му поверсі!</color>");
     }
 }

@@ -7,7 +7,7 @@ public class DoubleDoor : MonoBehaviour
     public float openAngle = 90f;
     public float smooth = 6f;
 
-    [Header("Звуки двери")]
+    [Header("Звуки двері")]
     public AudioSource openSound;
     public AudioSource closeSound;
 

@@ -2,27 +2,26 @@ using UnityEngine;
 
 public class ElevatorButton : MonoBehaviour
 {
-    [Header("Какую дверь открывать?")]
+    [Header("Які двері відкривати?")]
     public Animator doorAnimator;
     public string openAnimationName = "Elevator_Door_Open";
 
-    [Header("Настройки задержки")]
-    [Tooltip("Задержка перед открытием дверей в секундах")]
+    [Header("Налаштування затримки")]
     public float openDelay = 1.5f;
 
-    [Header("Звук кнопки/лифта")]
-    public AudioSource buttonSound;   // Звук клика самой кнопки (играет СРАЗУ)
-    public AudioSource doorOpenSound; // Звук открытия дверей лифта (играет С ЗАДЕРЖКОЙ)
+    [Header("Звук кнопки/ліфта")]
+    public AudioSource buttonSound;
+    public AudioSource doorOpenSound;
 
     private bool isPlayerNearby = false;
-    private bool isCalled = false; // Чтобы игрок не нажимал кнопку по сто раз, пока лифт "едет"
+    private bool isCalled = false;
 
     void OnTriggerEnter(Collider other)
     {
         if (other.CompareTag("Player") && !isCalled)
         {
             isPlayerNearby = true;
-            Debug.Log("Игрок подошел к кнопке. Нажмите E.");
+            Debug.Log("Гравець підійшов до кнопки. Натисніть E.");
         }
     }
 
@@ -36,7 +35,6 @@ public class ElevatorButton : MonoBehaviour
 
     void Update()
     {
-        // Проверяем, что игрок рядом, нажал E и лифт еще не вызван
         if (isPlayerNearby && Input.GetKeyDown(KeyCode.E) && !isCalled)
         {
             TriggerElevatorCall();
@@ -45,31 +43,26 @@ public class ElevatorButton : MonoBehaviour
 
     void TriggerElevatorCall()
     {
-        isCalled = true; // Блокируем повторные нажатия
+        isCalled = true;
 
-        // 1. СРАЗУ воспроизводим звук нажатия кнопки
         if (buttonSound != null)
         {
             buttonSound.Play();
         }
 
-        Debug.Log($"Кнопка нажата. Лифт приедет через {openDelay} сек...");
+        Debug.Log($"Кнопка натиснута. Ліфт прибуде через {openDelay} сек...");
 
-        // 2. Запускаем открытие дверей с задержкой через Invoke
         Invoke("OpenElevatorDoors", openDelay);
     }
 
-    // Этот метод вызовется автоматически через указанное в openDelay время
     void OpenElevatorDoors()
     {
-        // 3. Запускаем анимацию дверей
         if (doorAnimator != null)
         {
             doorAnimator.Play(openAnimationName);
-            Debug.Log("Лифт приехал, двери открываются!");
+            Debug.Log("Ліфт приїхав, двері відчиняються!");
         }
 
-        // 4. Включаем звук открытия дверей
         if (doorOpenSound != null)
         {
             doorOpenSound.Play();

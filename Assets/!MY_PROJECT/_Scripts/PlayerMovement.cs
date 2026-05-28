@@ -11,16 +11,16 @@ namespace SojaExiles
         public float runSpeed = 6f;
         public float gravity = -25f;
 
-        [Header("Настройки покачивания камеры")]
+        [Header("Налаштування коливання камери")]
         public float walkingBobAmount = 0.07f;
         public float walkingBobSpeed = 12f;
         public float runningBobAmount = 0.12f;
         public float runningBobSpeed = 16f;
 
-        [Header("Звуки шагов")]
-        public AudioSource stepsAudio; // Сам источник звука (AudioSource)
-        public AudioClip walkClip;     // Сюда перетащим аудиофайл обычной ходьбы (.mp3/.wav)
-        public AudioClip runClip;      // Сюда перетащим аудиофайл бега (.mp3/.wav)
+        [Header("Звуки шагів")]
+        public AudioSource stepsAudio;
+        public AudioClip walkClip;
+        public AudioClip runClip;
 
         Vector3 velocity;
         bool isGrounded;
@@ -29,19 +29,17 @@ namespace SojaExiles
 
         private float lastSinValue = 0f;
 
-        // Ссылка на менеджер кастомного управления
         private SlimUI.ModernMenu.UISettingsManager keyManager;
 
         void Start()
         {
             if (cameraTransform != null) defaultYPos = cameraTransform.localPosition.y;
 
-            // Находим менеджер на сцене
             keyManager = FindObjectOfType<SlimUI.ModernMenu.UISettingsManager>();
 
             if (keyManager == null)
             {
-                Debug.LogError("UISettingsManager не найден на сцене!");
+                Debug.LogError("UISettingsManager не знайшли на сцені!");
             }
         }
 
@@ -54,18 +52,14 @@ namespace SojaExiles
                 velocity.y = -2f;
             }
 
-            // Устанавливаем дефолтные значения ввода (на случай, если менеджер клавиш не назначен)
             bool isRunning = Input.GetKey(KeyCode.LeftShift);
             float x = Input.GetAxisRaw("Horizontal");
             float z = Input.GetAxisRaw("Vertical");
 
-            // --- ОПРОС КАСТОМНЫХ КНОПОК ИЗ МЕНЕДЖЕРА ---
             if (keyManager != null && keyManager.keys.Count > 0)
             {
-                // Проверяем кастомный спринт
                 isRunning = Input.GetKey(keyManager.keys["Sprint"]);
 
-                // Перезаписываем x (влево/вправо) и z (вперед/назад) ручным опросом
                 x = 0f;
                 z = 0f;
 
@@ -82,7 +76,6 @@ namespace SojaExiles
 
             controller.Move(move * currentSpeed * Time.deltaTime);
 
-            // Если мы на земле и куда-то идем
             if (isGrounded && move.magnitude > 0.1f && cameraTransform != null)
             {
                 float speedMultiplier = isRunning ? runningBobSpeed : walkingBobSpeed;
@@ -93,29 +86,24 @@ namespace SojaExiles
                 float newY = defaultYPos + sinValue * amount;
                 cameraTransform.localPosition = new Vector3(cameraTransform.localPosition.x, newY, cameraTransform.localPosition.z);
 
-                // --- ЛОГИКА ШАГОВ И БЕГА ---
                 if (sinValue < -0.95f && lastSinValue >= -0.95f)
                 {
                     if (stepsAudio != null)
                     {
-                        // 1. Выбираем нужный клип в зависимости от того, бежим мы или идем
                         AudioClip clipToPlay = isRunning ? runClip : walkClip;
 
-                        // Если клип назначен и сейчас не играет ТОЧНО ТАКОЙ ЖЕ звук
                         if (clipToPlay != null && (!stepsAudio.isPlaying || stepsAudio.clip != clipToPlay))
                         {
-                            stepsAudio.clip = clipToPlay; // Меняем звук в источнике
+                            stepsAudio.clip = clipToPlay;
 
-                            // Изменяем громкость и питч для реализма
                             stepsAudio.pitch = Random.Range(0.9f, 1.1f);
-                            stepsAudio.volume = isRunning ? 0.8f : 0.45f; // Бег громче, ходьба тише
+                            stepsAudio.volume = isRunning ? 0.8f : 0.45f;
 
                             stepsAudio.Play();
                         }
                     }
                 }
                 lastSinValue = sinValue;
-                // ------------------------------
             }
             else if (cameraTransform != null)
             {

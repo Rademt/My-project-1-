@@ -10,7 +10,7 @@ public class LightFlickerManager : MonoBehaviour
 
     void Start()
     {
-        Debug.Log("<color=yellow>[СВЕТ]: Скрипт успешно запущен на сцене!</color>");
+        Debug.Log("<color=yellow>[[СВІТЛО]: Сценарій успішно запущено на сцені!</color>");
         StartCoroutine(HardFlickerRoutine());
     }
 
@@ -20,12 +20,12 @@ public class LightFlickerManager : MonoBehaviour
         {
             yield return new WaitForSeconds(Random.Range(minTimeBetweenFlickers, maxTimeBetweenFlickers));
 
-            Debug.Log("<color=red>[СВЕТ]: МОРГАЮ! Выключаю лампы...</color>");
+            Debug.Log("<color=red>[СВІТЛО]: Моргаю! Вимикаю лампи...</color>");
             SwitchAllLights(false);
 
             yield return new WaitForSeconds(0.2f);
 
-            Debug.Log("<color=green>[СВЕТ]: Включаю лампы обратно!</color>");
+            Debug.Log("<color=green>[СВІТЛО]: Вмикаю лампи знову!</color>");
             SwitchAllLights(true);
         }
     }

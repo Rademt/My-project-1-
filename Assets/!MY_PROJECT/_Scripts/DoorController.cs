@@ -46,7 +46,7 @@ public class DoorController : MonoBehaviour
                     if (dot > 0.6f)
                     {
                         isOpen = !isOpen;
-                        Debug.Log(isOpen ? "Открываем одиночную дверь" : "Закрываем одиночную дверь");
+                        Debug.Log(isOpen ? "Відкриваємо одинарні двері" : "Закриваємо одинарні двері");
 
                         if (isOpen)
                         {

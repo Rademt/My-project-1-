@@ -23,16 +23,16 @@ public class AnomalyLogic : MonoBehaviour
         public GameObject screamerTriggerObject;
     }
 
-    [Tooltip("Шанс появления аномалии (0-100)")]
+    [Tooltip("Шанс появи аномалії (0-100)")]
     public int AnomalyChance = 50;
 
-    [Header("🛠️ РЕЖИМ ТЕСТИРОВАНИЯ (ДЛЯ РАЗРАБОТЧИКА)")]
-    [Tooltip("Если включено, рандом отключается, и всегда спавнится аномалия, выбранная ниже")]
+    [Header("🛠️ РЕЖИМ ТЕСТУВАННЯ (ДЛЯ РОЗРОБНИКА)")]
+    [Tooltip("Якщо включено, рандом відключається, і завжди спавниться аномалія, вибрана нижче")]
     public bool debugMode = false;
-    [Tooltip("Индекс аномалии из списка ниже, которую нужно принудительно включить (0, 1, 2...)")]
+    [Tooltip("Індекс аномалії зі списку нижче, котру требя примусово увімкнути (0, 1, 2...)")]
     public int debugAnomalyIndex = 0;
 
-    [Header("Список всех аномалий")]
+    [Header("Список усіх аномалій")]
     public List<AdvancedAnomaly> allAnomalies;
 
     [HideInInspector]
@@ -40,46 +40,38 @@ public class AnomalyLogic : MonoBehaviour
 
     void Start()
     {
-        Debug.Log($"[DEBUG] Главный триггер '{gameObject.name}' успешно активирован на сцене и готов ловить игрока!");
+        Debug.Log($"[DEBUG] Головний трігер '{gameObject.name}' успішно активовано на сцені й готовий ловити гравця!");
 
 #if UNITY_EDITOR
         if (Time.realtimeSinceStartup < 2f)
         {
             PlayerPrefs.SetInt("CurrentLoop", debugMode ? 1 : 0);
             PlayerPrefs.Save();
-            Debug.Log("<color=orange>[РЕДАКТОР]: Настройка этажей оптимизирована под тест!</color>");
+            Debug.Log("<color=orange>[РЕДАКТОР]: Налаштування поверхів оптимізовано для тестування!</color>");
         }
 #endif
 
         wasAnomalySpawned = false;
         if (allAnomalies == null || allAnomalies.Count == 0) return;
 
-        // --- ИНИЦИАЛИЗАЦИЯ СЦЕНЫ (СБРОС ВСЕХ АНОМАЛИЙ) ---
         foreach (var anomaly in allAnomalies)
         {
             if (anomaly.anomalyObject != null) anomaly.anomalyObject.SetActive(false);
             if (anomaly.normalObject != null) anomaly.normalObject.SetActive(true);
 
-            // УМНОЕ ОТКЛЮЧЕНИЕ ТРИГГЕРОВ
             if (anomaly.screamerTriggerObject != null)
             {
-                // Проверяем, колесница ли это
                 var wheelScript = anomaly.screamerTriggerObject.GetComponentInChildren<TriggerScreamerObject>();
 
                 if (wheelScript != null)
                 {
-                    // Если это колесница — ЖЕСТКО ВЫКЛЮЧАЕМ её триггер, чтобы она не ехала на чистом круге!
                     anomaly.screamerTriggerObject.SetActive(false);
                 }
                 else
                 {
-                    // Если это старая дверь туалета, НЕ ВЫКЛЮЧАЕМ её объект целиком, 
-                    // чтобы дверь не исчезала, а просто глушим сам скрипт скримера
                     var toiletScript = anomaly.screamerTriggerObject.GetComponentInChildren<ToiletDoorScreamer>();
                     if (toiletScript != null)
                     {
-                        // Тут дверь остается видимой, но скример спать ложится (если у тебя там есть метод выключения)
-                        // Если метода нет, то оставляем как есть, главное — дверь не исчезнет!
                     }
                 }
             }
@@ -94,18 +86,18 @@ public class AnomalyLogic : MonoBehaviour
             {
                 wasAnomalySpawned = true;
                 ActivateAnomaly(allAnomalies[debugAnomalyIndex]);
-                Debug.Log($"<color=magenta>[DEBUG РЕЖИМ]: Принудительно запущена аномалия №{debugAnomalyIndex} — {allAnomalies[debugAnomalyIndex].name}!</color>");
+                Debug.Log($"<color=magenta>[DEBUG РЕЖИМ]: Аномалія була запущена примусово №{debugAnomalyIndex} — {allAnomalies[debugAnomalyIndex].name}!</color>");
             }
             else
             {
-                Debug.LogError($"[DEBUG ОШИБКА]: Индекс {debugAnomalyIndex} не существует в списке аномалий!");
+                Debug.LogError($"[DEBUG ПОМИЛКА]: Індекс {debugAnomalyIndex} немає у списку аномалій!");
             }
             return;
         }
 
         if (currentLoop == 0)
         {
-            Debug.Log("<color=yellow>[ЭТАЖ 0]:</color> Ознакомительный круг. Полная чистота.");
+            Debug.Log("<color=yellow>[ЭТАЖ 0]:</color> Ознайомлювальне коло. Абсолютна чистота.");
             return;
         }
 
@@ -119,7 +111,7 @@ public class AnomalyLogic : MonoBehaviour
         }
         else
         {
-            Debug.Log($"<color=green>[ЧИСТЫЙ КРУГ]:</color> Ролл не прошел. Колесница спит. Этаж: {currentLoop}");
+            Debug.Log($"<color=green>[ЧИСТЕ КОЛО]:</color> Рол не пройшов. Колісниця спить. Поверх: {currentLoop}");
         }
     }
 
@@ -143,26 +135,23 @@ public class AnomalyLogic : MonoBehaviour
             case AnomalyType.TriggerScreamer:
                 if (anomaly.screamerTriggerObject != null)
                 {
-                    // Включаем триггер колесницы/скримера (теперь он сработает только если выпала аномалия!)
                     anomaly.screamerTriggerObject.SetActive(true);
 
-                    // Логика для двери туалета
                     ToiletDoorScreamer toiletScript = anomaly.screamerTriggerObject.GetComponentInChildren<ToiletDoorScreamer>();
                     if (toiletScript != null)
                     {
                         toiletScript.EnableScreamerAnomaly();
                     }
 
-                    // Логика для колесницы
                     TriggerScreamerObject wheelScript = anomaly.screamerTriggerObject.GetComponentInChildren<TriggerScreamerObject>();
                     if (wheelScript != null)
                     {
-                        Debug.Log($"[AnomalyLogic] Колесница '{anomaly.screamerTriggerObject.name}' активирована как АНОМАЛИЯ!");
+                        Debug.Log($"[AnomalyLogic] Колісниця '{anomaly.screamerTriggerObject.name}' активована як АНОМАЛІЯ!");
                     }
                 }
                 break;
         }
 
-        Debug.Log($"<color=cyan>[ВЫБРАНА АНОМАЛИЯ]:</color> {anomaly.name}");
+        Debug.Log($"<color=cyan>[ВИБРАНО АНОМАЛІЮ]:</color> {anomaly.name}");
     }
 }

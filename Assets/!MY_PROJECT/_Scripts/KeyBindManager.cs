@@ -1,23 +1,22 @@
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.UI; // Для работы с обычным Text
-using TMPro;        // Для работы с TextMeshPro
+using UnityEngine.UI;
+using TMPro;
 
 public class KeyBindManager : MonoBehaviour
 {
-    // Словарь, где хранятся действия и связанные с ними кнопки
     public Dictionary<string, KeyCode> keys = new Dictionary<string, KeyCode>();
 
     [System.Serializable]
     public struct KeyBindUI
     {
-        public string actionName; // Например: "Forward", "Backward"
+        public string actionName;
 
-        [Header("Перетащи сюда объект notassigned")]
-        public GameObject textObject; // Берем GameObject, чтобы юнити точно дала его перетащить!
+        [Header("Перетягни сюди об’єкт notassigned")]
+        public GameObject textObject;
     }
 
-    [Header("Список кнопок интерфейса")]
+    [Header("Перелік кнопок інтерфейсу")]
     public List<KeyBindUI> uiBinds;
 
     private string currentActionToRebind = "";
@@ -25,7 +24,6 @@ public class KeyBindManager : MonoBehaviour
 
     void Awake()
     {
-        // Инициализируем кнопки по умолчанию
         InitKey("Forward", KeyCode.W);
         InitKey("Backward", KeyCode.S);
         InitKey("Left", KeyCode.A);
@@ -34,7 +32,6 @@ public class KeyBindManager : MonoBehaviour
         InitKey("Sprint", KeyCode.LeftShift);
         InitKey("Interact", KeyCode.E);
 
-        // Обновляем текст на всех кнопках при старте
         UpdateAllUI();
     }
 
@@ -97,10 +94,8 @@ public class KeyBindManager : MonoBehaviour
         }
     }
 
-    // Вспомогательный метод, который сам разберется, Text там или TextMeshPro
     private void SetTextOnObject(GameObject obj, string text)
     {
-        // Проверяем на обычный Text
         Text normalText = obj.GetComponent<Text>();
         if (normalText != null)
         {
@@ -108,7 +103,6 @@ public class KeyBindManager : MonoBehaviour
             return;
         }
 
-        // Проверяем на TextMeshPro
         TextMeshProUGUI tmproText = obj.GetComponent<TextMeshProUGUI>();
         if (tmproText != null)
         {

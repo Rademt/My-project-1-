@@ -3,13 +3,13 @@ using UnityEngine.SceneManagement;
 
 public class Pause : MonoBehaviour
 {
-    [Header("Папка BUTTONS из Канваса (вкладки слева)")]
+    [Header("Папка BUTTONS з канвасу (вкладки ліворуч)")]
     public GameObject buttonsFolder;
 
-    [Header("Папка PANELS из Канваса (контент настроек)")]
+    [Header("Папка PANELS з Канваса (контент налаштувань)")]
     public GameObject panelsFolder;
 
-    [Header("Скрипт контроллера игрока (PlayerMovement или т.п.)")]
+    [Header("Скрипт контролера гравця (PlayerMovement тощо)")]
     public MonoBehaviour playerController;
 
     [HideInInspector]
@@ -34,16 +34,13 @@ public class Pause : MonoBehaviour
     public void PauseGame()
     {
         isPaused = true;
-        Time.timeScale = 0f; // Стопим время
+        Time.timeScale = 0f;
 
-        // Включаем папки с кнопками и всеми панелями разом
         if (buttonsFolder != null) buttonsFolder.SetActive(true);
         if (panelsFolder != null) panelsFolder.SetActive(true);
 
-        // Вырубаем контроллер игрока, чтобы разлочить мышь
         if (playerController != null) playerController.enabled = false;
 
-        // Включаем курсор
         Cursor.lockState = CursorLockMode.None;
         Cursor.visible = true;
     }
@@ -51,16 +48,13 @@ public class Pause : MonoBehaviour
     public void ResumeGame()
     {
         isPaused = false;
-        Time.timeScale = 1f; // Время пошло
+        Time.timeScale = 1f;
 
-        // Прячем весь интерфейс паузы
         if (buttonsFolder != null) buttonsFolder.SetActive(false);
         if (panelsFolder != null) panelsFolder.SetActive(false);
 
-        // Возвращаем управление игроку
         if (playerController != null) playerController.enabled = true;
 
-        // Прячем курсор
         Cursor.lockState = CursorLockMode.Locked;
         Cursor.visible = false;
     }
