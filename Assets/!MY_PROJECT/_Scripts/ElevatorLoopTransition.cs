@@ -116,7 +116,7 @@ public class ElevatorLoopTransition : MonoBehaviour
             PlayerPrefs.Save();
             Debug.Log($"Правильно! Лифт приехал на этаж: {currentLoop}");
 
-            if (currentLoop >= 2)
+            if (currentLoop >= 3)
             {
                 Debug.Log("ПОБЕДА!");
                 // Сбрасываем сохранения для следующего раза

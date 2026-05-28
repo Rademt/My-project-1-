@@ -22231,7 +22231,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 377c4cb9235e7f34998b44cc478c979f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::AnomalyLogic
-  AnomalyChance: 100
+  AnomalyChance: 50
   debugMode: 0
   debugAnomalyIndex: 2
   allAnomalies:
