@@ -9,7 +9,7 @@ EditorBuildSettings:
     path: Assets/!MY_PROJECT/Scene/Demo1.unity
     guid: 829a86ba161cdd840842063447f41aab
   - enabled: 1
-    path: Assets/!MY_PROJECT/Scene/Map_Hosp1.unity
-    guid: b6ca1756db6b14945b4116ce8880ae82
+    path: Assets/!MY_PROJECT/Scene/Map_Hosp1_Back.unity
+    guid: 2ae4e5beb02f7cb468519f69ef3a7631
   m_configObjects:
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 052faaac586de48259a63d0c4782560b, type: 3}
