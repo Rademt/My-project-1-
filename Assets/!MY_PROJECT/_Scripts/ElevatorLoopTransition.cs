@@ -15,6 +15,7 @@ public class ElevatorLoopTransition : MonoBehaviour
     public AudioSource doorOpenSound;
     public AudioSource doorCloseSound;
     public AudioSource elevatorMusic;
+    public AudioSource Victory;
 
     [Header("Логіка аномалій")]
     public AnomalyLogic anomalyLogic;
@@ -105,7 +106,7 @@ public class ElevatorLoopTransition : MonoBehaviour
             PlayerPrefs.Save();
             Debug.Log($"Правильно! Ліфт приїхав на поверх: {currentLoop}");
 
-            if (currentLoop >= 1)
+            if (currentLoop >= 3)
             {
                 Debug.Log("ПЕРЕМОГА!");
                 PlayerPrefs.SetInt("CurrentLoop", 0);
@@ -140,6 +141,11 @@ public class ElevatorLoopTransition : MonoBehaviour
         if (victoryMenuPanel != null)
         {
             victoryMenuPanel.SetActive(true);
+        }
+
+        if (victoryMenuPanel != null)
+        {
+            Victory.Play();
         }
 
         Time.timeScale = 0f;

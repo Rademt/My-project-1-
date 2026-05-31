@@ -10,6 +10,7 @@ public class TriggerScreamerObject : MonoBehaviour
 
     [Header("Звук для анімації")]
     public AudioSource soundSource;
+    public AudioSource hit;
 
     private bool isTriggered = false;
 
@@ -29,6 +30,8 @@ public class TriggerScreamerObject : MonoBehaviour
             {
                 soundSource.Play();
                 Debug.Log("Звук увімкнено!");
+                hit.Play();
+                Debug.Log("БАМ");
             }
         }
     }
