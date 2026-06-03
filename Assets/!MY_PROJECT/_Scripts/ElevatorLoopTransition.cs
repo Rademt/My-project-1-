@@ -106,7 +106,7 @@ public class ElevatorLoopTransition : MonoBehaviour
             PlayerPrefs.Save();
             Debug.Log($"Правильно! Ліфт приїхав на поверх: {currentLoop}");
 
-            if (currentLoop >= 3)
+            if (currentLoop >= 9)
             {
                 Debug.Log("ПЕРЕМОГА!");
                 PlayerPrefs.SetInt("CurrentLoop", 0);
