@@ -23410,8 +23410,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::AnomalyLogic
   AnomalyChance: 50
-  debugMode: 0
-  debugAnomalyIndex: 10
+  debugMode: 1
+  debugAnomalyIndex: 2
   allAnomalies:
   - name: Screamer
     type: 3
