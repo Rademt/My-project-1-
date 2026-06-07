@@ -1,6 +1,6 @@
 ﻿using UnityEngine;
 using System.Collections;
-using System.Collections.Generic; // Добавили для работы со списками и словарями
+using System.Collections.Generic;
 using UnityEngine.UI;
 using UnityEngine.SceneManagement;
 using TMPro;
@@ -42,9 +42,9 @@ namespace SlimUI.ModernMenu
         public GameObject tooltipstext;
 
         [Header("AUDIO SETTINGS")]
-        public GameObject sfxText; // Текст ВКЛ/ВЫКЛ для эффектов
-        public GameObject soundTextObject; // Текст для твоей новой кнопки звука
-        private bool soundEnabled = true; // Переменная состояния звука
+        public GameObject sfxText;
+        public GameObject soundTextObject;
+        private bool soundEnabled = true;
 
         [Header("CONTROLS SETTINGS")]
         public GameObject invertmousetext;
@@ -59,7 +59,6 @@ namespace SlimUI.ModernMenu
         private float sliderValueYSensitivity = 0.0f;
         private float sliderValueSmoothing = 0.0f;
 
-        // --- СИСТЕМА НАЗНАЧЕНИЯ КЛАВИШ ---
         [System.Serializable]
         public struct KeyBindUI
         {
@@ -79,7 +78,6 @@ namespace SlimUI.ModernMenu
 
         public void Awake()
         {
-            // Инициализируем кнопки управления по умолчанию
             InitKey("Forward", KeyCode.W);
             InitKey("Backward", KeyCode.S);
             InitKey("Left", KeyCode.A);
@@ -110,10 +108,8 @@ namespace SlimUI.ModernMenu
                 }
             }
 
-            // Получаем сохраненное состояние звука
             soundEnabled = PlayerPrefs.GetInt("CustomSoundEnabled", 1) == 1;
 
-            // РЕАЛЬНОЕ ВКЛЮЧЕНИЕ/ВЫКЛЮЧЕНИЕ ВСЕГО ЗВУКА В ИГРЕ НА СТАРТЕ
             AudioListener.pause = !soundEnabled;
 
             if (soundTextObject != null)
@@ -295,13 +291,11 @@ namespace SlimUI.ModernMenu
                 if (texturehightextLINE) texturehightextLINE.gameObject.SetActive(true);
             }
 
-            // Принудительно обновляем текст кнопок при старте
             UpdateAllKeyUI();
         }
 
         void OnEnable()
         {
-            // Обновляем визуал кнопок каждый раз, когда панель активируется
             UpdateAllKeyUI();
         }
 
@@ -331,7 +325,6 @@ namespace SlimUI.ModernMenu
             }
         }
 
-        // Вызываем по клику на кнопки Btn_Assign
         public void StartRebind(string actionName)
         {
             currentActionToRebind = actionName;
@@ -374,7 +367,7 @@ namespace SlimUI.ModernMenu
             TMP_Text tmproText = obj.GetComponent<TMP_Text>();
             if (tmproText != null)
             {
-                tmproText.text = text.ToLower(); // Переводим в нижний регистр, чтобы соответствовать стилю ассета ("on", "off")
+                tmproText.text = text.ToLower();
                 return;
             }
 

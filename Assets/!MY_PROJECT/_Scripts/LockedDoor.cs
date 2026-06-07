@@ -15,7 +15,6 @@ public class LockedDoor : MonoBehaviour
 
     void Start()
     {
-        // Если забыл перетянуть игрока в инспекторе, скрипт найдет его сам по тегу
         if (player == null)
         {
             GameObject p = GameObject.FindGameObjectWithTag("Player");
@@ -27,19 +26,15 @@ public class LockedDoor : MonoBehaviour
     {
         if (player != null)
         {
-            // 1. Проверяем точное расстояние между игроком и дверью
             float dist = Vector3.Distance(player.position, transform.position);
 
             if (dist <= interactDist)
             {
-                // 2. Считаем направление от игрока к двери и вектор его взгляда
                 Vector3 dirToDoor = (transform.position - player.position).normalized;
                 Vector3 playerLook = player.forward;
 
-                // Находим скалярное произведение (угол взгляда)
                 float dot = Vector3.Dot(playerLook, dirToDoor);
 
-                // Если игрок смотрит на дверь (dot > 0.6f)
                 if (dot > lookAngleThreshold)
                 {
                     if (Input.GetKeyDown(KeyCode.E))
@@ -48,7 +43,6 @@ public class LockedDoor : MonoBehaviour
 
                         if (lockedDoorSound != null)
                         {
-                            // Если игрок быстро спамит Е, сбрасываем звук на начало для четких щелчков
                             if (lockedDoorSound.isPlaying) lockedDoorSound.Stop();
 
                             lockedDoorSound.Play();

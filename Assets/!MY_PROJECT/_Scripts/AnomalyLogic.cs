@@ -38,9 +38,11 @@ public class AnomalyLogic : MonoBehaviour
     [HideInInspector]
     public bool wasAnomalySpawned = false;
 
+    private static List<int> anomalyPool = new List<int>();
+
     void Start()
     {
-        Debug.Log($"[DEBUG] Головний трігер '{gameObject.name}' успішно активовано на сцені й готовий ловити гравця!");
+        Debug.Log($"[DEBUG] Головний трігер '{gameObject.name}' успішно активовано на scenic й готовий ловити гравця!");
 
 #if UNITY_EDITOR
         if (Time.realtimeSinceStartup < 2f)
@@ -54,7 +56,7 @@ public class AnomalyLogic : MonoBehaviour
         wasAnomalySpawned = false;
         if (allAnomalies == null || allAnomalies.Count == 0) return;
 
-        foreach(var anomaly in allAnomalies)
+        foreach (var anomaly in allAnomalies)
         {
             if (anomaly.anomalyObject != null) anomaly.anomalyObject.SetActive(false);
             if (anomaly.normalObject != null) anomaly.normalObject.SetActive(true);
@@ -69,17 +71,12 @@ public class AnomalyLogic : MonoBehaviour
                 }
                 else
                 {
-                    // Проверяем нашу НОВУЮ ловушку (которая на пустышке)
                     var trapScript = anomaly.screamerTriggerObject.GetComponentInChildren<ToiletTrapAnomaly>();
 
                     if (trapScript != null)
                     {
-                        // Пустышку выключаем целиком, она не связана с физической дверью и ничего не сломает
                         anomaly.screamerTriggerObject.SetActive(false);
                     }
-
-                    // СТАРЫЙ скример (ToiletDoorScreamer) мы тут ВООБЩЕ НЕ ТРОГАЕМ! 
-                    // Пусть дверь живет своей жизнью, пока не выпадет аномалия.
                 }
             }
         }
@@ -113,13 +110,44 @@ public class AnomalyLogic : MonoBehaviour
         if (globalRoll <= AnomalyChance)
         {
             wasAnomalySpawned = true;
-            int randomIndex = Random.Range(0, allAnomalies.Count);
-            ActivateAnomaly(allAnomalies[randomIndex]);
+
+            if (anomalyPool.Count == 0 || anomalyPool.Count > allAnomalies.Count)
+            {
+                GenerateAnomalyPool();
+            }
+
+            int chosenIndex = anomalyPool[0];
+            anomalyPool.RemoveAt(0);
+
+            if (chosenIndex >= 0 && chosenIndex < allAnomalies.Count)
+            {
+                ActivateAnomaly(allAnomalies[chosenIndex]);
+            }
         }
         else
         {
             Debug.Log($"<color=green>[ЧИСТЕ КОЛО]:</color> Рол не пройшов. Колісниця спить. Поверх: {currentLoop}");
         }
+    }
+
+    private void GenerateAnomalyPool()
+    {
+        anomalyPool.Clear();
+
+        for (int i = 0; i < allAnomalies.Count; i++)
+        {
+            anomalyPool.Add(i);
+        }
+
+        for (int i = anomalyPool.Count - 1; i > 0; i--)
+        {
+            int rnd = Random.Range(0, i + 1);
+            int temp = anomalyPool[i];
+            anomalyPool[i] = anomalyPool[rnd];
+            anomalyPool[rnd] = temp;
+        }
+
+        Debug.Log($"<color=orange>[УМНА СУМКА]: Колоду аномалій успішно перемішано! Доступно унікальних подій: {anomalyPool.Count}</color>");
     }
 
     private void ActivateAnomaly(AdvancedAnomaly anomaly)
@@ -142,10 +170,8 @@ public class AnomalyLogic : MonoBehaviour
             case AnomalyType.TriggerScreamer:
                 if (anomaly.screamerTriggerObject != null)
                 {
-                    // Включаем родительский объект (для пустышки это важно, для старой двери она и так активна)
                     anomaly.screamerTriggerObject.SetActive(true);
 
-                    // 1. Включаем СТАРЫЙ скример туалета (и активируем сам компонент скрипта)
                     ToiletDoorScreamer toiletScript = anomaly.screamerTriggerObject.GetComponentInChildren<ToiletDoorScreamer>();
                     if (toiletScript != null)
                     {
@@ -153,14 +179,12 @@ public class AnomalyLogic : MonoBehaviour
                         toiletScript.EnableScreamerAnomaly();
                     }
 
-                    // 2. Включаем НАШУ НОВУЮ ловушку с сердцем
                     ToiletTrapAnomaly trapScript = anomaly.screamerTriggerObject.GetComponentInChildren<ToiletTrapAnomaly>();
                     if (trapScript != null)
                     {
                         trapScript.EnableScreamerAnomaly();
                     }
 
-                    // 3. Проверяем колесницу
                     TriggerScreamerObject wheelScript = anomaly.screamerTriggerObject.GetComponentInChildren<TriggerScreamerObject>();
                     if (wheelScript != null)
                     {

@@ -17,10 +17,8 @@ public class Door : MonoBehaviour
 
     void Start()
     {
-        // «апоминаем стартовое положение (закрыта€ дверь)
         defaultRotation = transform.localRotation;
 
-        // ”гол открыти€ жестко задаем на 90 градусов по оси Y относительно стартового положени€
         openRotation = defaultRotation * Quaternion.Euler(0, 90f, 0);
 
         if (player == null)
@@ -65,7 +63,6 @@ public class Door : MonoBehaviour
             }
         }
 
-        // ѕлавное вращение (smooth) без вс€ких јниматоров
         Quaternion targetRotation = isOpen ? openRotation : defaultRotation;
         transform.localRotation = Quaternion.Slerp(transform.localRotation, targetRotation, Time.deltaTime * smooth);
     }

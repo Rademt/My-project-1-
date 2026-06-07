@@ -36,15 +36,12 @@ public class HeartbeatAnomaly : MonoBehaviour
     {
         if (!isAnomalyActive || playerTransform == null || heartbeatAudio == null) return;
 
-        // Считаем расстояние между игроком и дверью
         float distance = Vector3.Distance(playerTransform.position, transform.position);
 
         if (distance <= maxDetectionRadius)
         {
-            // Нормализуем значение от 0.0 (далеко) до 1.0 (вплотную)
             float t = Mathf.InverseLerp(maxDetectionRadius, minPanicRadius, distance);
 
-            // Динамически меняем громкость и скорость звука
             heartbeatAudio.volume = Mathf.Lerp(0f, maxVolume, t);
             heartbeatAudio.pitch = Mathf.Lerp(minPitch, maxPitch, t);
         }
