@@ -23,39 +23,58 @@ public class AnomalyLogic : MonoBehaviour
         public GameObject screamerTriggerObject;
     }
 
-    [Tooltip("Шанс появи аномалії (0-100)")]
-    public int AnomalyChance = 50;
+    [Header("📊 БАЛАНС АНОМАЛИЙ (ДИНАМИЧЕСКИЙ)")]
+    [Tooltip("Базовый шанс аномалии на этаже (0-100)")]
+    public int baseAnomalyChance = 65;
+    [Tooltip("На сколько процентов повышать шанс, если прошлый этаж был чистым")]
+    public int chanceStepUp = 15;
+    [Tooltip("На сколько процентов урезать шанс, если на прошлом этаже БЫЛА аномалия")]
+    public int chanceStepDown = 20;
+
+    [Header("🎯 НАЛАШТУВАННЯ СКРИМЕРІВ")]
+    [Tooltip("Максимальна кількість УНІКАЛЬНИХ скримерів за всю гру (проходження 8 поверхів)")]
+    [Range(1, 4)] public int maxScreamersPerGame = 3;
+    [Tooltip("Базовый шанс, що аномалія виявиться скримером")]
+    [Range(0, 100)] public int screamerChance = 50;
 
     [Header("🛠️ РЕЖИМ ТЕСТУВАННЯ (ДЛЯ РОЗРОБНИКА)")]
-    [Tooltip("Якщо включено, рандом відключається, і завжди спавниться аномалія, вибрана нижче")]
     public bool debugMode = false;
-    [Tooltip("Індекс аномалії зі списку нижче, котру требя примусово увімкнути (0, 1, 2...)")]
     public int debugAnomalyIndex = 0;
 
-    [Header("Список усіх аномалій")]
+    [Header("Список усіх аномалий (15 штук)")]
     public List<AdvancedAnomaly> allAnomalies;
 
     [HideInInspector]
     public bool wasAnomalySpawned = false;
 
-    private static List<int> anomalyPool = new List<int>();
+    // Статические переменные (сохраняются при перезагрузке сцены между этажами)
+    private static List<int> regularAnomalyPool = new List<int>();
+    private static List<int> screamerPool = new List<int>();
+    private static int screamersSpawnedInThisGame = 0;
+
+    // Переменные "Игрового Режиссера" для контроля темпа
+    private static int currentDynamicChance = 65;
+    private static bool wasLastFloorScreamer = false;
+    private static int consecutiveAnomaliesCount = 0;
 
     void Start()
     {
-        Debug.Log($"[DEBUG] Головний трігер '{gameObject.name}' успішно активовано на scenic й готовий ловити гравця!");
+        Debug.Log($"[DEBUG] Головний трігер '{gameObject.name}' успішно активовано!");
 
 #if UNITY_EDITOR
         if (Time.realtimeSinceStartup < 2f)
         {
             PlayerPrefs.SetInt("CurrentLoop", debugMode ? 1 : 0);
             PlayerPrefs.Save();
-            Debug.Log("<color=orange>[РЕДАКТОР]: Налаштування поверхів оптимізовано для тестування!</color>");
+            ResetDirectorState();
+            Debug.Log("<color=orange>[РЕДАКТОР]: Все системні счетчики режиссера сброшены!</color>");
         }
 #endif
 
         wasAnomalySpawned = false;
         if (allAnomalies == null || allAnomalies.Count == 0) return;
 
+        // Оригинальная чистка сцены (двери не пропадают)
         foreach (var anomaly in allAnomalies)
         {
             if (anomaly.anomalyObject != null) anomaly.anomalyObject.SetActive(false);
@@ -64,19 +83,11 @@ public class AnomalyLogic : MonoBehaviour
             if (anomaly.screamerTriggerObject != null)
             {
                 var wheelScript = anomaly.screamerTriggerObject.GetComponentInChildren<TriggerScreamerObject>();
-
-                if (wheelScript != null)
-                {
-                    anomaly.screamerTriggerObject.SetActive(false);
-                }
+                if (wheelScript != null) anomaly.screamerTriggerObject.SetActive(false);
                 else
                 {
                     var trapScript = anomaly.screamerTriggerObject.GetComponentInChildren<ToiletTrapAnomaly>();
-
-                    if (trapScript != null)
-                    {
-                        anomaly.screamerTriggerObject.SetActive(false);
-                    }
+                    if (trapScript != null) anomaly.screamerTriggerObject.SetActive(false);
                 }
             }
         }
@@ -84,70 +95,131 @@ public class AnomalyLogic : MonoBehaviour
         Random.InitState(System.DateTime.Now.Millisecond + System.DateTime.Now.Second);
         int currentLoop = PlayerPrefs.GetInt("CurrentLoop", 0);
 
+        if (currentLoop == 0)
+        {
+            ResetDirectorState();
+            Debug.Log("<color=yellow>[ЭТАЖ 0]:</color> Ознакомление. Все счетчики сброшены.");
+            return;
+        }
+
+        // Режим тестирования
         if (debugMode)
         {
             if (debugAnomalyIndex >= 0 && debugAnomalyIndex < allAnomalies.Count)
             {
                 wasAnomalySpawned = true;
                 ActivateAnomaly(allAnomalies[debugAnomalyIndex]);
-                Debug.Log($"<color=magenta>[DEBUG РЕЖИМ]: Аномалія була запущена примусово №{debugAnomalyIndex} — {allAnomalies[debugAnomalyIndex].name}!</color>");
-            }
-            else
-            {
-                Debug.LogError($"[DEBUG ПОМИЛКА]: Індекс {debugAnomalyIndex} немає у списку аномалій!");
             }
             return;
         }
 
-        if (currentLoop == 0)
+        // Инициализация пулов, если пусты
+        if (regularAnomalyPool.Count == 0 || screamerPool.Count == 0)
         {
-            Debug.Log("<color=yellow>[ЭТАЖ 0]:</color> Ознайомлювальне коло. Абсолютна чистота.");
-            return;
+            GenerateSeparatedPools();
         }
 
+        // БРОСОК КУБИКА С УЧЕТОМ ДИНАМИЧЕСКОГО ШАНСА
         int globalRoll = Random.Range(0, 101);
+        Debug.Log($"[РЕЖИССЕР]: Текущий шанс аномалии: {currentDynamicChance}%. Выпало кубиком: {globalRoll}");
 
-        if (globalRoll <= AnomalyChance)
+        // Жесткое ограничение: не давать более 2 обычных аномалий подряд, чтобы игрок отдыхал
+        if (consecutiveAnomaliesCount >= 2)
+        {
+            globalRoll = 999; // Принудительно делаем круг чистым
+            Debug.Log("<color=cyan>[РЕЖИССЕР]: Принудительный чистый этаж для передышки игрока.</color>");
+        }
+
+        if (globalRoll <= currentDynamicChance)
         {
             wasAnomalySpawned = true;
+            consecutiveAnomaliesCount++;
+            int chosenIndex = -1;
 
-            if (anomalyPool.Count == 0 || anomalyPool.Count > allAnomalies.Count)
+            int screamerRoll = Random.Range(0, 101);
+
+            // ПРОВЕРКА: Был ли скример на прошлом этаже? Если да, то сейчас принудительно спавним обычную аномалию
+            if (wasLastFloorScreamer)
             {
-                GenerateAnomalyPool();
+                screamerRoll = 999; // Отключаем скример на этот ход
+                Debug.Log("<color=yellow>[РЕЖИССЕР]: Скример заблокирован, так как на прошлом этаже уже был скример!</color>");
             }
 
-            int chosenIndex = anomalyPool[0];
-            anomalyPool.RemoveAt(0);
+            if (screamerRoll <= screamerChance && screamerPool.Count > 0 && screamersSpawnedInThisGame < maxScreamersPerGame)
+            {
+                chosenIndex = screamerPool[0];
+                screamerPool.RemoveAt(0);
+                screamersSpawnedInThisGame++;
+                wasLastFloorScreamer = true; // Запоминаем, что этот этаж забрал скример
+                Debug.Log($"<color=red>[РЕЖИССЕР]: Будет скример! Всего: {screamersSpawnedInThisGame}/{maxScreamersPerGame}</color>");
+            }
+            else if (regularAnomalyPool.Count > 0)
+            {
+                chosenIndex = regularAnomalyPool[0];
+                regularAnomalyPool.RemoveAt(0);
+                wasLastFloorScreamer = false; // Обычная аномалия — скример "спит"
+            }
 
             if (chosenIndex >= 0 && chosenIndex < allAnomalies.Count)
             {
                 ActivateAnomaly(allAnomalies[chosenIndex]);
             }
+
+            // Корректируем динамический шанс вниз на следующий этаж (чтобы не было спама)
+            currentDynamicChance = Mathf.Clamp(currentDynamicChance - chanceStepDown, 20, 90);
         }
         else
         {
-            Debug.Log($"<color=green>[ЧИСТЕ КОЛО]:</color> Рол не пройшов. Колісниця спить. Поверх: {currentLoop}");
+            // ЭТАЖ ЧИСТЫЙ
+            wasLastFloorScreamer = false;
+            consecutiveAnomaliesCount = 0; // Сбрасываем счетчик аномалий подряд
+
+            // Корректируем динамический шанс вверх (если игроку скучно, поднимаем шанс встретить аномалию дальше)
+            currentDynamicChance = Mathf.Clamp(currentDynamicChance + chanceStepUp, 20, 90);
+            Debug.Log($"<color=green>[ЧИСТЕ КОЛО]:</color> Следующий этаж будет иметь шанс аномалии: {currentDynamicChance}%");
         }
     }
 
-    private void GenerateAnomalyPool()
+    private void ResetDirectorState()
     {
-        anomalyPool.Clear();
+        screamersSpawnedInThisGame = 0;
+        currentDynamicChance = baseAnomalyChance;
+        wasLastFloorScreamer = false;
+        consecutiveAnomaliesCount = 0;
+        regularAnomalyPool.Clear();
+        screamerPool.Clear();
+    }
+
+    private void GenerateSeparatedPools()
+    {
+        regularAnomalyPool.Clear();
+        screamerPool.Clear();
 
         for (int i = 0; i < allAnomalies.Count; i++)
         {
-            anomalyPool.Add(i);
+            if (allAnomalies[i].type == AnomalyType.TriggerScreamer)
+                screamerPool.Add(i);
+            else
+                regularAnomalyPool.Add(i);
         }
 
-        for (int i = anomalyPool.Count - 1; i > 0; i--)
+        // Перемешивание обычных
+        for (int i = regularAnomalyPool.Count - 1; i > 0; i--)
         {
             int rnd = Random.Range(0, i + 1);
-            int temp = anomalyPool[i];
-            anomalyPool[i] = anomalyPool[rnd];
-            anomalyPool[rnd] = temp;
+            int temp = regularAnomalyPool[i];
+            regularAnomalyPool[i] = regularAnomalyPool[rnd];
+            regularAnomalyPool[rnd] = temp;
         }
 
-        Debug.Log($"<color=orange>[УМНА СУМКА]: Колоду аномалій успішно перемішано! Доступно унікальних подій: {anomalyPool.Count}</color>");
+        // Перемешивание скримеров
+        for (int i = 0; i < screamerPool.Count - 1; i++)
+        {
+            int rnd = Random.Range(0, screamerPool.Count);
+            int temp = screamerPool[i];
+            screamerPool[i] = screamerPool[rnd];
+            screamerPool[rnd] = temp;
+        }
     }
 
     private void ActivateAnomaly(AdvancedAnomaly anomaly)
@@ -158,42 +230,24 @@ public class AnomalyLogic : MonoBehaviour
                 if (anomaly.normalObject != null) anomaly.normalObject.SetActive(false);
                 if (anomaly.anomalyObject != null) anomaly.anomalyObject.SetActive(true);
                 break;
-
             case AnomalyType.JustSpawn:
                 if (anomaly.anomalyObject != null) anomaly.anomalyObject.SetActive(true);
                 break;
-
             case AnomalyType.ScaleObject:
                 if (anomaly.objectToScale != null) anomaly.objectToScale.transform.localScale = anomaly.targetScale;
                 break;
-
             case AnomalyType.TriggerScreamer:
                 if (anomaly.screamerTriggerObject != null)
                 {
                     anomaly.screamerTriggerObject.SetActive(true);
-
                     ToiletDoorScreamer toiletScript = anomaly.screamerTriggerObject.GetComponentInChildren<ToiletDoorScreamer>();
-                    if (toiletScript != null)
-                    {
-                        toiletScript.enabled = true;
-                        toiletScript.EnableScreamerAnomaly();
-                    }
+                    if (toiletScript != null) { toiletScript.enabled = true; toiletScript.EnableScreamerAnomaly(); }
 
                     ToiletTrapAnomaly trapScript = anomaly.screamerTriggerObject.GetComponentInChildren<ToiletTrapAnomaly>();
-                    if (trapScript != null)
-                    {
-                        trapScript.EnableScreamerAnomaly();
-                    }
-
-                    TriggerScreamerObject wheelScript = anomaly.screamerTriggerObject.GetComponentInChildren<TriggerScreamerObject>();
-                    if (wheelScript != null)
-                    {
-                        Debug.Log($"[AnomalyLogic] Колісниця '{anomaly.screamerTriggerObject.name}' активована як АНОМАЛІЯ!");
-                    }
+                    if (trapScript != null) trapScript.EnableScreamerAnomaly();
                 }
                 break;
         }
-
-        Debug.Log($"<color=cyan>[ВИБРАНО АНОМАЛІЮ]:</color> {anomaly.name}");
+        Debug.Log($"<color=cyan>[АКТИВНА АНОМАЛИЯ]:</color> {anomaly.name}");
     }
 }
